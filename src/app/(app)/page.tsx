@@ -20,6 +20,11 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import ScienceIcon from "@mui/icons-material/Science";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
+import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 
 const calculateProgress = (laprak: any) => {
   const modules: any[] = laprak.modules || [];
@@ -91,6 +96,74 @@ export default function BerandaPage() {
     );
   }
 
+  interface PriorityTask {
+    id: string;
+    laprakName: string;
+    moduleName?: string;
+    type: "selesai" | "accAslab" | "accLaboran" | "ttdDosen";
+    label: string;
+    description: string;
+  }
+
+  const priorityTasks: PriorityTask[] = [];
+
+  daftarLaprak.forEach((lp) => {
+    // 1. Check if all modules are ACC Laboran but not signed by Lecturer
+    const allModulesAccLaboran = Array.isArray(lp.modules) && lp.modules.length > 0 && lp.modules.every((m) => m.accLaboran);
+    if (allModulesAccLaboran && !lp.ttdKartuKuning) {
+      priorityTasks.push({
+        id: `${lp.id}-ttdDosen`,
+        laprakName: lp.namaPraktikum,
+        type: "ttdDosen",
+        label: "Minta TTD Dosen",
+        description: `Seluruh modul sudah lengkap. Temui Dosen ${lp.namaDosen || ""} untuk meminta TTD Kartu Kuning.`,
+      });
+    }
+
+    // 2. Check modules
+    if (Array.isArray(lp.modules)) {
+      lp.modules.forEach((m) => {
+        if (!m.selesai) {
+          priorityTasks.push({
+            id: `${lp.id}-${m.id}-selesai`,
+            laprakName: lp.namaPraktikum,
+            moduleName: m.judul,
+            type: "selesai",
+            label: "Kerjakan Laporan",
+            description: "Modul ini belum selesai dikerjakan.",
+          });
+        } else if (!m.accAslab) {
+          priorityTasks.push({
+            id: `${lp.id}-${m.id}-accAslab`,
+            laprakName: lp.namaPraktikum,
+            moduleName: m.judul,
+            type: "accAslab",
+            label: "Minta ACC Aslab",
+            description: `Laporan selesai. Temui Aslab ${lp.namaAslab || ""} untuk meminta ACC.`,
+          });
+        } else if (!m.accLaboran) {
+          priorityTasks.push({
+            id: `${lp.id}-${m.id}-accLaboran`,
+            laprakName: lp.namaPraktikum,
+            moduleName: m.judul,
+            type: "accLaboran",
+            label: "Minta ACC Laboran",
+            description: `Sudah ACC Aslab. Temui Laboran ${lp.namaLaboran || ""} untuk verifikasi akhir.`,
+          });
+        }
+      });
+    }
+  });
+
+  const typePriority = {
+    ttdDosen: 1,
+    accLaboran: 2,
+    accAslab: 3,
+    selesai: 4,
+  };
+
+  priorityTasks.sort((a, b) => typePriority[a.type] - typePriority[b.type]);
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom sx={{ mb: 0.5 }}>
@@ -99,6 +172,127 @@ export default function BerandaPage() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         {activeSemester?.name}{activeSemester?.year ? ` · ${activeSemester.year}` : ""}
       </Typography>
+
+      {/* Priority Tasks Widget */}
+      {priorityTasks.length > 0 && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: (t) => t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)",
+            background: (t) => {
+              const baseBg = t.palette.background.paper;
+              return t.palette.mode === "dark"
+                ? `linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, ${baseBg} 100%)`
+                : `linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, ${baseBg} 100%)`;
+            },
+            mb: 4,
+          }}
+        >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box>
+              <Typography variant="h6" fontWeight="bold" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <TrackChangesIcon sx={{ color: "error.main" }} /> Tindakan Segera & Prioritas
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Tugas-tugas terdekat yang perlu diselesaikan untuk menaikkan progres
+              </Typography>
+            </Box>
+            <Chip
+              label={`${priorityTasks.length} Tertunda`}
+              size="small"
+              color="error"
+              variant="outlined"
+              sx={{ fontWeight: "bold" }}
+            />
+          </Box>
+
+          <List sx={{ p: 0, display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {priorityTasks.slice(0, 3).map((task) => {
+              let taskIcon = <span>📝</span>;
+              let chipColor: "warning" | "info" | "success" | "secondary" = "warning";
+              
+              if (task.type === "selesai") {
+                taskIcon = <HourglassEmptyIcon sx={{ color: "warning.main" }} />;
+                chipColor = "warning";
+              } else if (task.type === "accAslab") {
+                taskIcon = <AssignmentIndIcon sx={{ color: "info.main" }} />;
+                chipColor = "info";
+              } else if (task.type === "accLaboran") {
+                taskIcon = <ScienceIcon sx={{ color: "success.main" }} />;
+                chipColor = "success";
+              } else if (task.type === "ttdDosen") {
+                taskIcon = <HistoryEduIcon sx={{ color: "secondary.main" }} />;
+                chipColor = "secondary";
+              }
+
+              return (
+                <ListItem
+                  key={task.id}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor: (t) => t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.03)",
+                    bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.01)" : "rgba(0, 0, 0, 0.005)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: { xs: "wrap", sm: "nowrap" },
+                    gap: 2,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: (t) => t.palette.divider,
+                      bgcolor: (t) => t.palette.mode === "dark" ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.015)",
+                    }
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        bgcolor: (t) => {
+                          if (task.type === "selesai") return t.palette.mode === "dark" ? "rgba(237, 108, 2, 0.12)" : "rgba(237, 108, 2, 0.06)";
+                          if (task.type === "accAslab") return t.palette.mode === "dark" ? "rgba(2, 136, 209, 0.12)" : "rgba(2, 136, 209, 0.06)";
+                          if (task.type === "accLaboran") return t.palette.mode === "dark" ? "rgba(46, 125, 50, 0.12)" : "rgba(46, 125, 50, 0.06)";
+                          return t.palette.mode === "dark" ? "rgba(156, 39, 176, 0.12)" : "rgba(156, 39, 176, 0.06)";
+                        }
+                      }}
+                    >
+                      {taskIcon}
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" fontWeight="bold" color="text.primary">
+                        {task.moduleName ? `${task.moduleName} — ` : ""}
+                        <Box component="span" sx={{ color: "text.secondary", fontWeight: "medium" }}>
+                          {task.laprakName}
+                        </Box>
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {task.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Chip
+                    label={task.label}
+                    color={chipColor}
+                    size="small"
+                    sx={{ fontWeight: "bold", fontSize: "0.75rem", px: 1 }}
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
+        </Paper>
+      )}
 
       <Box
         display="grid"

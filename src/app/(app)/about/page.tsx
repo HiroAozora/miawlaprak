@@ -46,7 +46,7 @@ export default function AboutPage() {
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
-        Tentang My Laprak guehh
+        Tentang Miawlaprak
       </Typography>
       <Paper sx={{ p: { xs: 2, md: 3 } }}>
         <Typography variant="h6" gutterBottom>
@@ -54,7 +54,7 @@ export default function AboutPage() {
         </Typography>
         <Typography variant="body1" paragraph>
           <Typography component="span" fontWeight="bold">
-            My Laprak guehh
+            Miawlaprak
           </Typography>{" "}
           tu aplikasi web modern (kayaknya) yang dirancang untuk bantu aku,
           kamu, kita semua biar gampang nge tracking atau nyatat laprak2 kita,
@@ -114,7 +114,7 @@ export default function AboutPage() {
           color="text.secondary"
           sx={{ fontStyle: "italic" }}
         >
-          hidup kadang pdd (pusing dengan deadline, jadi jangan lupa ngelaprak.
+          hidup kadang pdd (pusing dengan deadline), jadi jangan lupa ngelaprak.
           aslinya aku suka ngedit
         </Typography>
 
@@ -237,21 +237,24 @@ export default function AboutPage() {
           pejabat korup selesai.
         </Typography>
         <Button
+          component="a"
+          href="https://github.com/HiroAozora/miawlaprak"
+          target="_blank"
+          rel="noopener noreferrer"
           variant="contained"
           color="inherit"
           startIcon={<GitHubIcon />}
-          disabled
           sx={{
-            bgcolor: (theme) =>
-              theme.palette.mode === "dark" ? "grey.700" : "grey.300",
-            color: "text.disabled",
+            bgcolor: "text.primary",
+            color: "background.paper",
+            textTransform: "none",
+            fontWeight: "bold",
             "&:hover": {
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "grey.700" : "grey.300",
+              bgcolor: "text.secondary",
             },
           }}
         >
-          Source Code (Coming Soon)
+          Source Code
         </Button>
 
         <Typography variant="body1" sx={{ mt: 3, mb: 1 }}>
@@ -318,7 +321,7 @@ export default function AboutPage() {
           color="text.secondary"
           textAlign="center"
         >
-          Laprak Tracker v{currentVersion} - Masih dalam pengembangan.
+          Miawlaprak v{currentVersion} (Stable)
         </Typography>
       </Paper>
     </Box>
